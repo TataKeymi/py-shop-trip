@@ -1,3 +1,5 @@
+import math
+
 from app.services.io import load_config
 from app.models.shop import Shop
 from app.models.customer import Customer
@@ -6,7 +8,7 @@ from app.services.pricing import trip_cost
 
 
 def shop_trip() -> None:
-    shop_trip_data = load_config("app\\config.json")
+    shop_trip_data = load_config("app/config.json")
     fuel_price = shop_trip_data["FUEL_PRICE"]
     shops_data = shop_trip_data["shops"]
     customers_data = shop_trip_data["customers"]
@@ -22,25 +24,22 @@ def shop_trip() -> None:
     for customer in customers:
         print(f"{customer.name} has {customer.money} dollars")
         shop_candidates = []
-        for shop in shops:
+        for index, shop in enumerate(shops):
             cost = trip_cost(customer, shop, fuel_price)
             if cost is not None:
                 print(f"{customer.name}'s trip to the"
                       f" {shop.name} costs {cost:.2f}")
-            shop_candidates.append((cost, shop))
-        if not shop_candidates:
-            print(f"{customer.name} doesn't have enough "
-                  f"money to make a purchase in any shop")
+                if isinstance(cost, (int, float)) and math.isfinite(cost):
+                    shop_candidates.append((cost, index, shop))
+        best_cost, _, best_shop = min(shop_candidates)
+        if customer.can_afford(best_cost):
+            print(f"{customer.name} rides to {best_shop.name}")
+            customer.move_to(best_shop.location)
+            best_shop.print_receipt(customer)
+            customer.money -= best_cost
+            print(f"{customer.name} rides home")
+            print(f"{customer.name} now has {customer.money:.2f} dollars")
+            print()
         else:
-            best_cost, best_shop = min(shop_candidates, key=lambda x: x[0])
-            if customer.can_afford(best_cost):
-                print(f"{customer.name} rides to {best_shop.name}")
-                customer.move_to(best_shop.location)
-                best_shop.print_receipt(customer)
-                customer.money -= best_cost
-                print(f"{customer.name} rides home")
-                print(f"{customer.name} now has {customer.money:.2f} dollars")
-                print()
-            else:
-                print(f"{customer.name} doesn't have enough money"
-                      f" to make a purchase in any shop")
+            print(f"{customer.name} doesn't have enough money"
+                    f" to make a purchase in any shop")
