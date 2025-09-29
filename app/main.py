@@ -26,20 +26,24 @@ def shop_trip() -> None:
         shop_candidates = []
         for index, shop in enumerate(shops):
             cost = trip_cost(customer, shop, fuel_price)
-            if cost is not None:
-                print(f"{customer.name}'s trip to the"
+            print(f"{customer.name}'s trip to the"
                       f" {shop.name} costs {cost:.2f}")
-                if isinstance(cost, (int, float)) and math.isfinite(cost):
-                    shop_candidates.append((cost, index, shop))
-        best_cost, _, best_shop = min(shop_candidates)
-        if customer.can_afford(best_cost):
-            print(f"{customer.name} rides to {best_shop.name}")
-            customer.move_to(best_shop.location)
-            best_shop.print_receipt(customer)
-            customer.money -= best_cost
-            print(f"{customer.name} rides home")
-            print(f"{customer.name} now has {customer.money:.2f} dollars")
-            print()
+            if isinstance(cost, (int, float)) and math.isfinite(cost):
+                shop_candidates.append((cost, index, shop))
+        if shop_candidates is None:
+            print(f"{customer.name} doesn't have enough money to make a purchase in any shop")
         else:
-            print(f"{customer.name} doesn't have enough money"
-                    f" to make a purchase in any shop")
+            best_cost, _, best_shop = min(shop_candidates)
+            if customer.can_afford(best_cost):
+                print(f"{customer.name} rides to {best_shop.name}")
+                original_location = customer.location.copy()
+                customer.move_to(best_shop.location)
+                best_shop.print_receipt(customer)
+                customer.money -= best_cost
+                customer.move_to(original_location)
+                print(f"{customer.name} rides home")
+                print(f"{customer.name} now has {customer.money:.2f} dollars")
+                print()
+            else:
+                print(f"{customer.name} doesn't have enough money"
+                        f" to make a purchase in any shop")
